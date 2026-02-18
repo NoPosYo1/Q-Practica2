@@ -72,7 +72,7 @@ def obtener_conexion():
     try:
         return st.connection("postgresql", type="sql")
     except Exception as e:
-        st.error("No se pudo conectar a Neon. Verifica los Secrets.")
+        st.error("No se pudo establecer la conexión segura con Neon.")
         st.stop()
 conn = obtener_conexion()
 
