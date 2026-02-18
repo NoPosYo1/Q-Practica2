@@ -336,13 +336,26 @@ if not st.session_state["logged_in"]:
                 elif reg_pass != reg_pass2:
                     st.toast("Las contraseñas no coinciden", icon="⚠️")
                 else:
-                    st.session_state["pending_user"] = reg_user
-                    st.session_state["pending_email"] = reg_email
-                    st.session_state["pending_pass"] = reg_pass
-                    
-                    
-                    st.session_state["mode"] = "verification"
-                    st.rerun()
+                    try:
+                        query_check = text("SELECT nombre FROM usuarios WHERE nombre = :u")
+                        with conn.session as s:
+                            result = s.execute(query_check, params={"u": reg_user}).fetchone()
+                        
+                        if result:
+                            st.toast(f"El usuario '{reg_user}' ya existe. Elige otro.", icon="⚠️")
+                        else:
+                            st.session_state["pending_user"] = reg_user
+                            st.session_state["pending_email"] = reg_email
+                            st.session_state["pending_pass"] = reg_pass
+                            
+                            enviar_codigo(reg_email, reg_user)
+
+                            st.toast("Código de verificación enviado", icon="📧")
+                            st.session_state["mode"] = "verification"
+                            st.rerun()
+                            
+                    except Exception as e:
+                        st.error(f"Error al verificar base de datos: {e}")
 
         elif st.session_state["mode"] == "verification":
             st.markdown("### Código de Verificación")
@@ -357,10 +370,6 @@ if not st.session_state["logged_in"]:
                         st.session_state["pending_pass"]
                     )
                     if ok:
-                        
-                        enviar_codigo(st.session_state["pending_email"], st.session_state["pending_user"])
-
-                        st.toast("Código de verificación enviado a tu correo", icon="📧")
                         st.success("Verificación exitosa. Ahora puedes iniciar sesión.")
                         st.session_state["mode"] = "login"
                         st.session_state["pending_user"] = ""
@@ -371,7 +380,7 @@ if not st.session_state["logged_in"]:
                         st.toast(msg, icon="❌")
                 else:
                     st.toast("Código inválido. Inténtalo de nuevo.", icon="❌")
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
