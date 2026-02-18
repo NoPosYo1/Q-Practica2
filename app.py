@@ -83,36 +83,68 @@ GMAIL_SENDER = st.secrets["GMAIL_SENDER"]
 GMAIL_KEY = st.secrets["GMAIL_PASSWORD"]
 
 #Funcion para generar y enviar codigo por email
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+
 def enviar_codigo(destino, nombre_usuario):
 
     codigo = str(random.randint(10000, 99999))
     st.session_state.codigo_generado = codigo
     
-    mensaje = MIMEMultipart()
+    mensaje = MIMEMultipart('related')
     mensaje['Subject'] = "Código de Verificación - Q-Integrity"
     mensaje['From'] = GMAIL_SENDER
     mensaje['To'] = destino
 
-    cuerpo = f"Hola {nombre_usuario},\n\nTu código de verificación es: {codigo}"
-    mensaje.attach(MIMEText(cuerpo, 'plain'))
+    html = f"""
+    <html>
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0;">
+        <div style="padding: 20px; background-color: #f4f7f6;">
+            <div style="max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <img src="cid:logo_qintegrity" style="max-width: 180px; height: auto;">
+                </div>
+                
+                <h2 style="color: #2d3748; text-align: center;">Verificación de Identidad</h2>
+                <p style="color: #4a5568; font-size: 16px;">Hola <strong>{nombre_usuario}</strong>,</p>
+                <p style="color: #4a5568; font-size: 16px;">Para completar tu registro en <strong>Q-Integrity</strong>, utiliza el siguiente código de seguridad:</p>
+                
+                <div style="margin: 30px 0; padding: 20px; background-color: #edf2f7; text-align: center; border-radius: 8px;">
+                    <span style="font-size: 36px; font-weight: bold; color: #2b6cb0; letter-spacing: 4px;">{codigo}</span>
+                </div>
+                
+                <p style="color: #718096; font-size: 13px; text-align: center; border-top: 1px solid #edf2f7; padding-top: 20px;">
+                    Este código es válido por tiempo limitado. Si no solicitaste este acceso, por favor ignora este mensaje.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    parte_html = MIMEText(html, 'html')
+    mensaje.attach(parte_html)
 
-    ruta_imagen = "imagenes/imagen3-cortada.jpeg"
+    ruta_imagen = os.path.join("imagenes", "imagen3-recortada.jpeg")
+    
     if os.path.exists(ruta_imagen):
         with open(ruta_imagen, 'rb') as f:
-            img_data = f.read()
-        imagen_adjunta = MIMEImage(img_data, name=os.path.basename(ruta_imagen))
-        mensaje.attach(imagen_adjunta)
+            img = MIMEImage(f.read())
+            img.add_header('Content-ID', '<logo_qintegrity>')
+            mensaje.attach(img)
+    else:
+        st.warning(f"No se encontró la imagen en: {ruta_imagen}")
 
     try:
-        
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(GMAIL_SENDER, GMAIL_KEY)
         server.sendmail(GMAIL_SENDER, destino, mensaje.as_string())
         server.quit()
-        st.success("Correo enviado con éxito.")
+        st.toast("Código enviado a tu correo electrónico", icon="📧")
     except Exception as e:
-        st.error(f"Error al enviar: {e}")
+        st.error(f"Error al enviar el correo: {e}")
 
 def check_login(user, pwd):
     # Si ya se está logueado en esta sesion, no vamos a la BD
