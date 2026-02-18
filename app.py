@@ -88,9 +88,7 @@ def enviar_codigo(destino, nombre_usuario):
     
     # 2. Configurar el asunto y cuerpo
     asunto = "Código de Verificación para Q-Integrity"
-    cuerpo = f"""Hola {nombre_usuario},
-
-Tu código de verificación es: {codigo}."""
+    cuerpo = f"Hola {nombre_usuario},\n\nTu código es: {codigo}"
 
     # 3. Crear el objeto de mensaje con soporte para tildes (UTF-8)
     mensaje = MIMEText(cuerpo, 'plain', 'utf-8')
