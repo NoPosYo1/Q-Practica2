@@ -17,29 +17,26 @@ import os
 import io
 import uuid
 import time
-import streamlit as st
-from datetime import datetime, date
-from typing import Dict, List, Tuple, Optional
-import numpy as np
-import pandas as pd
-
-from pathlib import Path
-from api_ia import ApiIa
-import fitz  # PyMuPDF
-import cv2
-from rapidocr_onnxruntime import RapidOCR
-
-import re  # Para validación de email
-from typing import Tuple, Dict, Optional
-
-#Imports para login y envio de codigo
+import re
 import smtplib
 import random
 import hashlib
-from sqlalchemy import text #se necesita para evitar el error ArgumentError
+from datetime import datetime, date
+from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+from email.mime.text import MIMEText
+
+import numpy as np
+import pandas as pd
+import streamlit as st
+import fitz  # PyMuPDF
+import cv2
+from sqlalchemy import text
+from rapidocr_onnxruntime import RapidOCR
 
 st.set_page_config(page_title="Q-INTEGRITY", layout="wide")
 
+from api_ia import ApiIa
 # Se añaden los sesion_state necesarios para la autenticación y gestión de usuarios, así como la función de envío de código de verificación por email.
 
 # Estados para el Login
@@ -85,19 +82,34 @@ GMAIL_KEY = st.secrets["GMAIL_PASSWORD"]
 
 #Funcion para generar y enviar codigo por email
 def enviar_codigo(destino, nombre_usuario):
-
-    #se genera el codigo y se guarda para luego crear el mensaje
+    # 1. Generar el código y guardarlo en la sesión
     codigo = str(random.randint(10000, 99999))
     st.session_state.codigo_generado = codigo
+    
+    # 2. Configurar el asunto y cuerpo
     asunto = "Código de Verificación para Q-Integrity"
-    cuerpo = f"Hola {nombre_usuario},\n\nTu código de verificación es: {codigo}\n\nGracias por registrarte en Q-Integrity."
-    mensaje = f"Subject: {asunto}\n\n{cuerpo}"
-                        
-    server = smtplib.SMTP("smtp.gmail.com", 587)#se envia el email con el codigo de verificación
-    server.starttls()
-    server.login(GMAIL_SENDER, GMAIL_KEY)
-    server.sendmail(GMAIL_SENDER, destino, mensaje)
-    server.quit()
+    cuerpo = f"""Hola {nombre_usuario},
+
+Tu código de verificación es: {codigo}."""
+
+    # 3. Crear el objeto de mensaje con soporte para tildes (UTF-8)
+    mensaje = MIMEText(cuerpo, 'plain', 'utf-8')
+    mensaje['Subject'] = asunto
+    mensaje['From'] = GMAIL_SENDER
+    mensaje['To'] = destino
+
+    try:
+        # 4. Configurar el servidor y enviar
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(GMAIL_SENDER, GMAIL_KEY)
+        
+        # Enviamos el mensaje convertido a string seguro
+        server.sendmail(GMAIL_SENDER, destino, mensaje.as_string())
+        server.quit()
+        
+    except Exception as e:
+        st.error(f"Error al enviar el correo: {e}")
 
 
 
