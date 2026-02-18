@@ -72,7 +72,7 @@ def obtener_conexion():
     try:
         return st.connection("postgresql", type="sql")
     except Exception as e:
-        st.error("No se pudo establecer la conexión segura con Neon.")
+        st.error("No se pudo establecer la conexión segura con la base de datos.")
         st.stop()
 conn = obtener_conexion()
 
@@ -115,7 +115,7 @@ def check_login(user, pwd):
         return True
     
     try:
-        
+
         query = text("SELECT nombre, clave FROM usuarios WHERE nombre = :u")
         
         with conn.session as s:
