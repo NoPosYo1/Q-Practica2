@@ -111,9 +111,6 @@ Tu código de verificación es: {codigo}."""
     except Exception as e:
         st.error(f"Error al enviar el correo: {e}")
 
-
-
-
 def check_login(user, pwd):
     # Si ya se está logueado en esta sesion, no vamos a la BD
     if st.session_state.get("logged_in") and st.session_state.get("login_user") == user:
