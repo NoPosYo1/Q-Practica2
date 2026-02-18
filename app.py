@@ -126,7 +126,7 @@ def enviar_codigo(destino, nombre_usuario):
     parte_html = MIMEText(html, 'html')
     mensaje.attach(parte_html)
 
-    ruta_imagen = os.path.join("imagenes", "imagen3-recortada.jpeg")
+    ruta_imagen = os.path.join("imagenes", "imagen3-cortada.jpeg")
     
     if os.path.exists(ruta_imagen):
         with open(ruta_imagen, 'rb') as f:
