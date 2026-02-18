@@ -133,7 +133,11 @@ def enviar_codigo(destino, nombre_usuario):
             img = MIMEImage(f.read())
             img.add_header('Content-ID', '<logo_qintegrity>')
             
-            img.add_header('Content-Disposition', 'inline')
+            # --- AJUSTE EXTREMO ---
+            # Eliminamos el Disposition para que no sepa que es un adjunto
+            # y forzamos que el navegador del correo lo vea solo como recurso
+            img.add_header('Content-Type', 'image/jpeg; name="logo"')
+            # No agregues la línea de 'Content-Disposition' en absoluto
             
             mensaje.attach(img)
             
