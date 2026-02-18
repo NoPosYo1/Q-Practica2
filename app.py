@@ -340,9 +340,7 @@ if not st.session_state["logged_in"]:
                     st.session_state["pending_email"] = reg_email
                     st.session_state["pending_pass"] = reg_pass
                     
-                    enviar_codigo(reg_email, reg_user)
-
-                    st.toast("Código de verificación enviado a tu correo", icon="📧")
+                    
                     st.session_state["mode"] = "verification"
                     st.rerun()
 
@@ -359,6 +357,10 @@ if not st.session_state["logged_in"]:
                         st.session_state["pending_pass"]
                     )
                     if ok:
+                        
+                        enviar_codigo(st.session_state["pending_email"], st.session_state["pending_user"])
+
+                        st.toast("Código de verificación enviado a tu correo", icon="📧")
                         st.success("Verificación exitosa. Ahora puedes iniciar sesión.")
                         st.session_state["mode"] = "login"
                         st.session_state["pending_user"] = ""
