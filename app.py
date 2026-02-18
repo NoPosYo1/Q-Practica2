@@ -10,7 +10,7 @@ Q-INTEGRITY – APP COMPLETA (PC)
 ✅ Sin rutas fijas tipo C:/... (solo archivos locales al lado del app.py)
 PEGAR COMPLETO EN app.py
 '''
-st.set_page_config(page_title="Q-INTEGRITY", layout="wide")
+
 
 # ======================= INICIO IMPORTS ==================================
 import os
@@ -37,6 +37,8 @@ import smtplib
 import random
 import hashlib
 from sqlalchemy import text #se necesita para evitar el error ArgumentError
+
+st.set_page_config(page_title="Q-INTEGRITY", layout="wide")
 
 # Se añaden los sesion_state necesarios para la autenticación y gestión de usuarios, así como la función de envío de código de verificación por email.
 
