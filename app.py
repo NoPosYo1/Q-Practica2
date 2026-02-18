@@ -132,6 +132,8 @@ def enviar_codigo(destino, nombre_usuario):
         with open(ruta_imagen, 'rb') as f:
             img = MIMEImage(f.read())
             img.add_header('Content-ID', '<logo_qintegrity>')
+
+            img.add_header('Content-Disposition', 'inline', filename="logo.jpg")
             mensaje.attach(img)
     else:
         st.warning(f"No se encontró la imagen en: {ruta_imagen}")
