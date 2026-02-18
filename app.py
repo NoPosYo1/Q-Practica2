@@ -126,20 +126,17 @@ def enviar_codigo(destino, nombre_usuario):
     parte_html = MIMEText(html, 'html')
     mensaje.attach(parte_html)
 
-    ruta_imagen = os.path.join("imagenes", "imagen3-cortada.jpeg")
+    ruta_imagen = os.path.join("imagenes", "imagen3-recortada.jpeg")
     
     if os.path.exists(ruta_imagen):
         with open(ruta_imagen, 'rb') as f:
             img = MIMEImage(f.read())
-            # Definimos el ID para el HTML
             img.add_header('Content-ID', '<logo_qintegrity>')
             
-            # --- AJUSTE CLAVE ---
-            # Eliminamos el parámetro 'filename' para que el correo no lo trate como archivo
-            # y lo marcamos como 'inline' (dentro de línea)
             img.add_header('Content-Disposition', 'inline')
             
             mensaje.attach(img)
+            
     else:
         st.warning(f"No se encontró la imagen en: {ruta_imagen}")
 
