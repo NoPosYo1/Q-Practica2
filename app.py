@@ -10,17 +10,18 @@ Q-INTEGRITY – APP COMPLETA (PC)
 ✅ Sin rutas fijas tipo C:/... (solo archivos locales al lado del app.py)
 PEGAR COMPLETO EN app.py
 '''
-import streamlit as st
+st.set_page_config(page_title="Q-INTEGRITY", layout="wide")
+
 # ======================= INICIO IMPORTS ==================================
 import os
 import io
 import uuid
 import time
+import streamlit as st
 from datetime import datetime, date
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 import pandas as pd
-import streamlit as st
 
 from pathlib import Path
 from api_ia import ApiIa
@@ -29,53 +30,170 @@ import cv2
 from rapidocr_onnxruntime import RapidOCR
 
 import re  # Para validación de email
-import streamlit as st
 from typing import Tuple, Dict, Optional
 
-# Simulación de usuarios (en memoria)
-if "USERS" not in st.session_state:
-    st.session_state["USERS"] = {
-        "admin": {"password": "admin", "email": "admin@test.com"}
-    }
+#Imports para login y envio de codigo
+import smtplib
+import random
+import hashlib
+from sqlalchemy import text #se necesita para evitar el error ArgumentError
+
+# Se añaden los sesion_state necesarios para la autenticación y gestión de usuarios, así como la función de envío de código de verificación por email.
+
+# Estados para el Login
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+if "login_user" not in st.session_state:
+    st.session_state["login_user"] = ""
+
+# Estados para el flujo de Registro y Verificación
+if "mode" not in st.session_state:
+    st.session_state["mode"] = "login"  # Controla si mostramos el formulario o el código
+
+# Datos temporales (Se guardan aquí mientras el usuario espera el correo)
+if "pending_user" not in st.session_state:
+    st.session_state["pending_user"] = ""
+if "pending_pass" not in st.session_state:
+    st.session_state["pending_pass"] = ""
+if "pending_email" not in st.session_state:
+    st.session_state["pending_email"] = ""
+
+# El código que se envía por Gmail
+if "codigo_generado" not in st.session_state:
+    st.session_state["codigo_generado"] = None
+
+
+#Funcion de encriptar contraseñas
+def proteger_clave(password):
+    return hashlib.sha256(str.encode(password)).hexdigest()
+
+#conexion base de datos
+@st.cache_resource
+def obtener_conexion():
+    try:
+        return st.connection("postgresql", type="sql")
+    except Exception as e:
+        st.error("No se pudo conectar a Neon. Verifica los Secrets.")
+        st.stop()
+conn = obtener_conexion()
+
+#credenciañes de gmail
+GMAIL_SENDER = st.secrets["GMAIL_SENDER"]
+GMAIL_KEY = st.secrets["GMAIL_PASSWORD"]
+
+#Funcion para generar y enviar codigo por email
+def enviar_codigo(destino, nombre_usuario):
+
+    #se genera el codigo y se guarda para luego crear el mensaje
+    codigo = str(random.randint(10000, 99999))
+    st.session_state.codigo_generado = codigo
+    asunto = "Código de Verificación para Q-Integrity"
+    cuerpo = f"Hola {nombre_usuario},\n\nTu código de verificación es: {codigo}\n\nGracias por registrarte en Q-Integrity."
+    mensaje = f"Subject: {asunto}\n\n{cuerpo}"
+                        
+    server = smtplib.SMTP("smtp.gmail.com", 587)#se envia el email con el codigo de verificación
+    server.starttls()
+    server.login(GMAIL_SENDER, GMAIL_KEY)
+    server.sendmail(GMAIL_SENDER, destino, mensaje)
+    server.quit()
+
+
+
 
 def check_login(user, pwd):
-    users = st.session_state["USERS"]
-    return user in users and users[user]["password"] == pwd
+    # Si ya se está logueado en esta sesion, no vamos a la BD
+    if st.session_state.get("logged_in") and st.session_state.get("login_user") == user:
+        return True
+    
+    try:
+        #Consultamos la base de datos
+        conn = st.connection("postgresql", type="sql")
+        query = text("SELECT nombre, clave FROM usuarios WHERE nombre = :u")
+        
+        with conn.session as s:
+            result = s.execute(query, params={"u": user}).fetchone()
+            
+            if result:
+                db_user, db_pass_hash = result
+                # Comparamos el hash de la clave ingresada con la de la BD
+                if db_pass_hash == proteger_clave(pwd):
+                    return True
+        
+        return False # No coinciden o no existe
+    except Exception as e:
+        st.error(f"Error de conexión: {e}")
+        return False
 
 def register_user(user, email, pwd):
-    users = st.session_state["USERS"]
-    if user in users:
-        return False, "El usuario ya existe."
-    users[user] = {"password": pwd, "email": email}
-    st.session_state["USERS"] = users
-    return True, "Usuario registrado correctamente."
+    try:
+        #Conexión a la base de datos
+        conn = st.connection("postgresql", type="sql")
+        
+        #Verificar si el usuario ya existe
+        query_check = text("SELECT nombre FROM usuarios WHERE nombre = :u")
+        with conn.session as s:
+            result = s.execute(query_check, params={"u": user}).fetchone()
+            if result:
+                return False, "El usuario ya existe."
+            
+            #Si no existe, lo insertamos
+            clave_hash = proteger_clave(pwd)
+            query_ins = text("INSERT INTO usuarios (nombre, clave, email) VALUES (:u, :c, :e)")
+            s.execute(query_ins, params={"u": user, "c": clave_hash, "e": email})
+            s.commit()
+            
+        return True, "Usuario registrado correctamente en la base de datos."
+    except Exception as e:
+        return False, f"Error técnico: {e}"
 
 def change_password(user: str, old_pwd: str, new_pwd: str) -> Tuple[bool, str]:
-    """Cambia la contraseña de un usuario existente.
-    Retorna (success, message).
-    """
-    users = st.session_state["USERS"]
-    if user not in users:
-        return False, "Usuario no encontrado."
-    if users[user]["password"] != old_pwd:
-        return False, "La contraseña actual es incorrecta."
     if not new_pwd or len(new_pwd.strip()) == 0:
         return False, "La nueva contraseña no puede estar vacía."
-    users[user]["password"] = new_pwd
-    st.session_state["USERS"] = users
-    return True, "Contraseña actualizada correctamente."
+    
+    try:
+        #Consultar la contraseña actual (hash) en la DB
+        query_val = text("SELECT clave FROM usuarios WHERE nombre = :u")
+        with conn.session as s:
+            result = s.execute(query_val, params={"u": user}).fetchone()
+            
+            if not result:
+                return False, "Usuario no encontrado."
+            
+            db_pass_hash = result[0]
+            
+            # Verificar si la contraseña antigua coincide
+            if db_pass_hash != proteger_clave(old_pwd):
+                return False, "La contraseña actual es incorrecta."
+            
+            #Actualizar con el nuevo hash
+            nuevo_hash = proteger_clave(new_pwd)
+            query_upd = text("UPDATE usuarios SET clave = :n WHERE nombre = :u")
+            s.execute(query_upd, params={"n": nuevo_hash, "u": user})
+            s.commit()
+            
+        return True, "Contraseña actualizada correctamente en la base de datos."
+    except Exception as e:
+        return False, f"Error técnico al actualizar: {e}"
 
 def get_current_user_info() -> Optional[Dict]:
-    """Retorna la información del usuario actual logueado."""
     current_user = st.session_state.get("login_user", "")
+    
     if not current_user:
         return None
-    users = st.session_state.get("USERS", {})
-    if current_user in users:
-        return {
-            "username": current_user,
-            "email": users[current_user].get("email", "")
-        }
+        
+    try:
+        query = text("SELECT nombre, email FROM usuarios WHERE nombre = :u")
+        with conn.session as s:
+            result = s.execute(query, params={"u": current_user}).fetchone()
+            
+            if result:
+                return {
+                    "username": result[0],
+                    "email": result[1]
+                }
+    except Exception as e:
+        st.error(f"Error al obtener info del usuario: {e}")
+        
     return None
 
 def logout_user():
@@ -89,15 +207,6 @@ def is_valid_email(email):
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(pattern, email) is not None
 
-# Estado sesión
-if "logged_in" not in st.session_state:
-    st.session_state["logged_in"] = False
-if "login_user" not in st.session_state:
-    st.session_state["login_user"] = ""
-if "mode" not in st.session_state:
-    st.session_state["mode"] = "login"  # "login" o "verification"
-if "pending_user" not in st.session_state:
-    st.session_state["pending_user"] = ""
 
 # ======================= PANTALLA LOGIN ==========================
 if not st.session_state["logged_in"]:
@@ -139,23 +248,31 @@ if not st.session_state["logged_in"]:
 
     tab1, tab2 = st.tabs(["🔑 Iniciar Sesión", "🔐 Registrarse"])
 
+#INICIAR SESION
     with tab1:
         st.markdown("<div class='tab-content'>", unsafe_allow_html=True)
         login_user = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="login_user_input")
         login_pass = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_pass_input")
         
         if st.button("Iniciar Sesión", key="btn_login", use_container_width=True):
-            if check_login(login_user, login_pass):
-                st.session_state["logged_in"] = True
-                st.session_state["login_user"] = login_user
-                st.success(f"Bienvenido, {login_user}")
-                st.rerun()
+            if login_user and login_pass:
+
+                if check_login(login_user, login_pass):
+                    st.session_state["logged_in"] = True
+                    st.session_state["login_user"] = login_user
+                    st.success(f"Bienvenido, {login_user}")
+                    st.rerun()
+                else:
+                    st.toast("Usuario o contraseña incorrectos", icon="❌")
             else:
-                st.toast("Usuario o contraseña incorrectos", icon="❌")
+                st.toast("Completa ambos campos", icon="⚠️")
         st.markdown("</div>", unsafe_allow_html=True)
 
+
+    #REGISTRAR USUARIO -CODIGO - EMAIL - CONTRASEÑA 
     with tab2:
         st.markdown("<div class='tab-content'>", unsafe_allow_html=True)
+
         if st.session_state["mode"] == "login":
             reg_user = st.text_input("Usuario", placeholder="Elige un usuario", key="reg_user")
             reg_email = st.text_input("Correo", placeholder="tuemail@ejemplo.com", key="reg_email")
@@ -170,25 +287,37 @@ if not st.session_state["logged_in"]:
                 elif reg_pass != reg_pass2:
                     st.toast("Las contraseñas no coinciden", icon="⚠️")
                 else:
-                    ok, msg = register_user(reg_user, reg_email, reg_pass)
-                    if ok:
-                        st.toast(msg, icon="✅")
-                        st.session_state["mode"] = "verification"
-                        st.session_state["pending_user"] = reg_user
-                        st.rerun()
-                    else:
-                        st.toast(msg, icon="❌")
+                    st.session_state["pending_user"] = reg_user
+                    st.session_state["pending_email"] = reg_email
+                    st.session_state["pending_pass"] = reg_pass
+                    
+                    enviar_codigo(reg_email, reg_user)
+
+                    st.toast("Código de verificación enviado a tu correo", icon="📧")
+                    st.session_state["mode"] = "verification"
+                    st.rerun()
+
         elif st.session_state["mode"] == "verification":
             st.markdown("### Código de Verificación")
             verification_code = st.text_input("Código de verificación", placeholder="Ingresa el código", key="verification_code")
             
             if st.button("Verificar", key="btn_verify", use_container_width=True):
-                # Aquí poner la logica pa verificar el inicio de sesion jej
-                if verification_code.strip():
-                    st.success("Verificación exitosa. Ahora puedes iniciar sesión.")
-                    st.session_state["mode"] = "login"
-                    st.session_state["pending_user"] = ""
-                    st.rerun()
+                if verification_code.strip() == st.session_state["codigo_generado"]:
+
+                    ok, msg = register_user(
+                        st.session_state["pending_user"],
+                        st.session_state["pending_email"],
+                        st.session_state["pending_pass"]
+                    )
+                    if ok:
+                        st.success("Verificación exitosa. Ahora puedes iniciar sesión.")
+                        st.session_state["mode"] = "login"
+                        st.session_state["pending_user"] = ""
+                        st.session_state["pending_email"] = ""
+                        st.session_state["pending_pass"] = ""
+                        st.rerun()
+                    else:
+                        st.toast(msg, icon="❌")
                 else:
                     st.toast("Código inválido. Inténtalo de nuevo.", icon="❌")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -683,7 +812,7 @@ except Exception as e:
 # ======================== FIN DE UTILIDADES  =================================
 
 # ======================== INICIO DE CONFIGURACION Y RESETS SEGUROS =================================
-st.set_page_config(page_title="Q-INTEGRITY", layout="wide")
+
 
 if st.session_state.get("DEN_RESET_REQUESTED"):
     _clear_last = bool(st.session_state.get("DEN_RESET_CLEAR_LAST", True))
