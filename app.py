@@ -115,8 +115,7 @@ def check_login(user, pwd):
         return True
     
     try:
-        #Consultamos la base de datos
-        conn = st.connection("postgresql", type="sql")
+        
         query = text("SELECT nombre, clave FROM usuarios WHERE nombre = :u")
         
         with conn.session as s:
