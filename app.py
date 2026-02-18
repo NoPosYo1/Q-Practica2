@@ -25,6 +25,8 @@ from datetime import datetime, date
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 
 import numpy as np
 import pandas as pd
@@ -82,32 +84,35 @@ GMAIL_KEY = st.secrets["GMAIL_PASSWORD"]
 
 #Funcion para generar y enviar codigo por email
 def enviar_codigo(destino, nombre_usuario):
-    # 1. Generar el código y guardarlo en la sesión
+
     codigo = str(random.randint(10000, 99999))
     st.session_state.codigo_generado = codigo
     
-    # 2. Configurar el asunto y cuerpo
-    asunto = "Código de Verificación para Q-Integrity"
-    cuerpo = f"Hola {nombre_usuario},\n\nTu código es: {codigo}"
-
-    # 3. Crear el objeto de mensaje con soporte para tildes (UTF-8)
-    mensaje = MIMEText(cuerpo, 'plain', 'utf-8')
-    mensaje['Subject'] = asunto
+    mensaje = MIMEMultipart()
+    mensaje['Subject'] = "Código de Verificación - Q-Integrity"
     mensaje['From'] = GMAIL_SENDER
     mensaje['To'] = destino
 
+    cuerpo = f"Hola {nombre_usuario},\n\nTu código de verificación es: {codigo}"
+    mensaje.attach(MIMEText(cuerpo, 'plain'))
+
+    ruta_imagen = "imagenes/imagen3-cortada.jpeg"
+    if os.path.exists(ruta_imagen):
+        with open(ruta_imagen, 'rb') as f:
+            img_data = f.read()
+        imagen_adjunta = MIMEImage(img_data, name=os.path.basename(ruta_imagen))
+        mensaje.attach(imagen_adjunta)
+
     try:
-        # 4. Configurar el servidor y enviar
+        
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(GMAIL_SENDER, GMAIL_KEY)
-        
-        # Enviamos el mensaje convertido a string seguro
         server.sendmail(GMAIL_SENDER, destino, mensaje.as_string())
         server.quit()
-        
+        st.success("Correo enviado con éxito.")
     except Exception as e:
-        st.error(f"Error al enviar el correo: {e}")
+        st.error(f"Error al enviar: {e}")
 
 def check_login(user, pwd):
     # Si ya se está logueado en esta sesion, no vamos a la BD
