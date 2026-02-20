@@ -103,8 +103,10 @@ def enviar_codigo(destino, nombre_usuario):
     mensaje['From'] = GMAIL_SENDER
     mensaje['To'] = destino
 
+    numeroImagen = str(random.randint(1, 3))
+
     # 3. Tu enlace de Supabase (pega aquí el que copiaste)
-    url_logo = "https://csrmdehaiivpcdnxafax.supabase.co/storage/v1/object/public/imagenes/imagen3-recortada.jpeg"
+    url_logo = f"https://csrmdehaiivpcdnxafax.supabase.co/storage/v1/object/public/imagenes/imagen{numeroImagen}-cortada.jpeg"
 
     # 4. Diseño HTML limpio
     html = f"""
