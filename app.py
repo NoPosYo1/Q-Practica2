@@ -82,22 +82,11 @@ conn = obtener_conexion()
 GMAIL_SENDER = st.secrets["GMAIL_SENDER"]
 GMAIL_KEY = st.secrets["GMAIL_PASSWORD"]
 
-#Funcion para generar y enviar codigo por email
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
-
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import random
-
 def enviar_codigo(destino, nombre_usuario):
-    # 1. Generar código
+
     codigo = str(random.randint(10000, 99999))
     st.session_state.codigo_generado = codigo
     
-    # 2. Configurar mensaje (ya no necesitas 'related' porque no hay adjuntos)
     mensaje = MIMEMultipart()
     mensaje['Subject'] = "Código de Verificación - Q-Integrity"
     mensaje['From'] = GMAIL_SENDER
@@ -105,10 +94,8 @@ def enviar_codigo(destino, nombre_usuario):
 
     numeroImagen = str(random.randint(1, 3))
 
-    # 3. Tu enlace de Supabase (pega aquí el que copiaste)
     url_logo = f"https://csrmdehaiivpcdnxafax.supabase.co/storage/v1/object/public/imagenes/imagen{numeroImagen}-cortada.jpeg"
 
-    # 4. Diseño HTML limpio
     html = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px;">
