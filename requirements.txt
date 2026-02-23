@@ -13,3 +13,4 @@ opencv-python-headless
 sqlalchemy
 psycopg2-binary
 xlrd
+aspose-cells
