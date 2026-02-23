@@ -3983,40 +3983,6 @@ def _read_excel_xls_text_robust(abs_path):
         print(f"Error con Excel (.xls): {e}")
         return ""
 
-
-def _read_excel_visual_robust(abs_path):
-    """
-    Convierte un Excel (.xls o .xlsx) a PDF temporal para 
-    reutilizar tu lógica de OCR y extraer texto de gráficos.
-    """
-    try:
-        # Cargar el libro de Excel (soporta .xls y .xlsx)
-        workbook = cells.Workbook(abs_path)
-        
-        # Configurar para que cada pestaña quepa en una página de PDF 
-        pdf_path = abs_path.replace(".xls", ".pdf").replace(".xlsx", ".pdf")
-        
-        save_options = cells.PdfSaveOptions()
-        
-        # Esto asegura que no se corten los gráficos a la mitad
-        save_options.one_page_per_sheet = True 
-        
-        # Guardar como PDF temporal
-        workbook.save(pdf_path, save_options)
-        
-        # Reutilizar tu función de PDF que ya tiene OCR con Tesseract
-        texto_final, diagnostico = _read_pdf_text_robust(pdf_path, force_ocr=True)
-        
-        # Limpieza: borrar el PDF temporal para no llenar tu Asus TUF de basura
-        if os.path.exists(pdf_path):
-            os.remove(pdf_path)
-            
-        return texto_final
-        
-    except Exception as e:
-        print(f"Error en conversión visual: {e}")
-        return ""
-
 # --- OCR Y DETECCIÓN DE IDIOMA  ---
 def _detect_language(text: str) -> str:
     """Detecta el idioma del texto usando langdetect (español por prioridad)."""
