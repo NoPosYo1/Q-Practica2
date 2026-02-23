@@ -27,7 +27,6 @@ from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
-
 import numpy as np
 import pandas as pd
 import streamlit as st
