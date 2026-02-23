@@ -3930,18 +3930,15 @@ def _read_docx_text_robust(abs_path: str) -> str:
     except Exception:
         return ""
 
-def _read_excel_text_robust(abs_path: str) -> str:
-    """
-    Lee todas las pestañas de un Excel (.xlsx, .xls) de forma robusta.
-    """
+def _read_excel_xlsx_text_robust(abs_path):
     try:
-
+        # Motor estándar (openpyxl para .xlsx)
+        dict_hojas = pd.read_excel(abs_path, sheet_name=None, engine='openpyxl')
+    except Exception:
         try:
-            dict_hojas = pd.read_excel(abs_path, sheet_name=None, engine='openpyxl')
-        except Exception:
+            # Sin especificar motor (pandas)
             dict_hojas = pd.read_excel(abs_path, sheet_name=None)
-        
-        if not dict_hojas:
+        except Exception:
             return ""
             
         lineas_texto = []
@@ -3963,6 +3960,28 @@ def _read_excel_text_robust(abs_path: str) -> str:
         print(f"Error crítico en la extracción de Excel: {e}")
         return ""
 #aa
+def _read_excel_xls_text_robust(abs_path):
+    try:
+
+        dict_hojas = pd.read_excel(abs_path, sheet_name=None)
+        
+        if not dict_hojas:
+            return ""
+            
+        lineas_texto = []
+        for nombre_hoja, df in dict_hojas.items():
+            df = df.dropna(how='all').dropna(axis=1, how='all')
+            if not df.empty:
+                lineas_texto.append(f"--- HOJA: {nombre_hoja} ---")
+                lineas_texto.append(df.to_string(index=False))
+                lineas_texto.append("\n")
+        
+        return "\n".join(lineas_texto).strip()
+        
+    except Exception as e:
+        # Esto dirá qué motor falta exactamente
+        print(f"Error con Excel (.xls): {e}")
+        return ""
 
 # --- OCR Y DETECCIÓN DE IDIOMA  ---
 def _detect_language(text: str) -> str:
@@ -4196,10 +4215,15 @@ def render_pantalla_9_ia():
         if not text.strip():
             st.error(diag)
             return
-    elif ext in ["xls", "xlsx"]:
-        text = _read_excel_text_robust(abs_path)
+    elif ext == "xlsx":
+        text = _read_excel_xlsx_text_robust(abs_path)
         if not text.strip():
-            st.error("No pude extraer texto desde el Excel. (El archivo en disco no parece ser un XLSX válido o está vacío).")
+            st.error("No pude extraer texto desde el Excel.")
+            return
+    elif ext == "xls":
+        text = _read_excel_xls_text_robust(abs_path)
+        if not text.strip():
+            st.error("No pude extraer texto desde el Excel.")
             return
     else:
         st.warning("Tipo de archivo no soportado. Esta demo analiza DOCX y PDF (con OCR).")
