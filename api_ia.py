@@ -122,7 +122,7 @@ class ApiIa:
 
         items = [x.strip() for x in raw.split("~~")]
         return [x for x in items if x]  # sin vacíos
-    """
+    
     def clean_checkboxes(self, ia_resume: str) -> str:
         if not ia_resume:
             return "No se pudo generar el resumen IA"
@@ -130,7 +130,7 @@ class ApiIa:
         chk_pattern = r"(?sm)\[(.*?)\]"
         # Elimina el bloque [ ... ] completo (y lo que contenga)
         return re.sub(chk_pattern, "", ia_resume).strip()
-    
+    """
 
     def chat_interactivo(self, mensaje_usuario, historial_mensajes, ia_contenido):        
         model = "openai/gpt-oss-120b"
