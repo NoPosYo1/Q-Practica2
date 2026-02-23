@@ -3982,6 +3982,45 @@ def _read_excel_xls_text_robust(abs_path):
         # Esto dirá qué motor falta exactamente
         print(f"Error con Excel (.xls): {e}")
         return ""
+#aas
+
+try:
+    import aspose.cells as cells
+except ImportError:
+    st.error("La librería Aspose no se instaló correctamente. Revisa los logs de Streamlit.")
+import os
+def _read_excel_visual_robust(abs_path):
+    """
+    Convierte un Excel (.xls o .xlsx) a PDF temporal para 
+    reutilizar tu lógica de OCR y extraer texto de gráficos.
+    """
+    try:
+        # 1. Cargar el libro de Excel (soporta .xls y .xlsx)
+        workbook = cells.Workbook(abs_path)
+        
+        # 2. Configurar para que cada pestaña quepa en una página de PDF (si es posible)
+        pdf_path = abs_path.replace(".xls", ".pdf").replace(".xlsx", ".pdf")
+        
+        save_options = cells.PdfSaveOptions()
+        # Esto asegura que no se corten los gráficos a la mitad
+        save_options.one_page_per_sheet = True 
+        
+        # 3. Guardar como PDF temporal
+        workbook.save(pdf_path, save_options)
+        
+        # 4. Reutilizar tu función de PDF que ya tiene OCR con Tesseract
+        # Nota: aquí llamas a la función que ya habías programado antes
+        texto_final, diagnostico = _read_pdf_text_robust(pdf_path, force_ocr=True)
+        
+        # Limpieza: borrar el PDF temporal para no llenar tu Asus TUF de basura
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+            
+        return texto_final
+        
+    except Exception as e:
+        print(f"Error en conversión visual: {e}")
+        return ""
 
 # --- OCR Y DETECCIÓN DE IDIOMA  ---
 def _detect_language(text: str) -> str:
@@ -4215,7 +4254,12 @@ def render_pantalla_9_ia():
         if not text.strip():
             st.error(diag)
             return
-            
+    elif ext in ["xls", "xlsx"]:
+        text = _read_excel_visual_robust(abs_path)
+        if not text.strip():
+            st.error("No pude extraer texto desde el Excel (probé extracción visual con OCR).")
+            return
+        """
     elif ext == "xlsx":
         text = _read_excel_xlsx_text_robust(abs_path)
         if not text.strip():
@@ -4226,10 +4270,11 @@ def render_pantalla_9_ia():
         if not text.strip():
             st.error("No pude extraer texto desde el Excel.")
             return
+        """
     else:
         st.warning("Tipo de archivo no soportado. Esta demo analiza DOCX y PDF (con OCR).")
         return
-
+        
 
     # --- FIN MODIFICACIÓN: extracción y OCR ---
 
