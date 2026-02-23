@@ -296,7 +296,7 @@ if not st.session_state["logged_in"]:
         st.markdown("<div class='tab-content'>", unsafe_allow_html=True)
 
         if st.session_state["mode"] == "login":
-            reg_user = st.text_input("Usuario", placeholder="Elige un usuario", key="reg_user")
+            reg_user = st.text_input("Usuario", placeholder="Crea un usuario", key="reg_user")
             reg_email = st.text_input("Correo", placeholder="tuemail@ejemplo.com", key="reg_email")
             reg_pass = st.text_input("Contraseña", type="password", placeholder="Crea una contraseña", key="reg_pass")
             reg_pass2 = st.text_input("Repetir contraseña", type="password", placeholder="Repite la contraseña", key="reg_pass2")
@@ -875,9 +875,6 @@ DATA_FILE_PIE_M3 = "qintegrity_control_pie_m3.xlsx"
 
 # ✅ Índice de Biblioteca EETT (cuando exista Pantalla 7)
 EETT_INDEX_FILE = "qintegrity_biblioteca.xlsx"
-
-# Indice de checklist aprobados (Pantalla 8)
-DATA_FILE_REVISIONES = Path("qintegrity_revisiones.txt")
 
 FIG_W = 5.8
 FIG_H = 3.2
@@ -3959,7 +3956,7 @@ def _read_excel_xlsx_text_robust(abs_path):
     except Exception as e:
         print(f"Error crítico en la extracción de Excel: {e}")
         return ""
-
+#aa
 def _read_excel_xls_text_robust(abs_path):
     try:
 
@@ -4215,6 +4212,7 @@ def render_pantalla_9_ia():
         if not text.strip():
             st.error(diag)
             return
+            
     elif ext == "xlsx":
         text = _read_excel_xlsx_text_robust(abs_path)
         if not text.strip():
@@ -4231,76 +4229,6 @@ def render_pantalla_9_ia():
 
 
     # --- FIN MODIFICACIÓN: extracción y OCR ---
-
-    # ANALISIS DE IA Y GENERACION DE CHECKLISTS QA/QC
-    # Leer las revisiones de checkboxes previas existentes
-    def obtener_revisiones():
-        try:
-            revisiones = DATA_FILE_REVISIONES.read_text()
-            revisiones = revisiones.replace("'", "")
-        except FileNotFoundError:
-            return []
-        except PermissionError:
-            return []
-        except UnicodeDecodeError:
-            return []
-        except Exception as e:
-            return []
-        else:
-            return revisiones.split("\n")
-
-    # Aprobar una revision de acuerdo al estado del checkbox
-    def aprobar_revision(id_revision):
-        try:
-            revisiones = obtener_revisiones()
-            if id_revision not in revisiones:
-                with open(DATA_FILE_REVISIONES, 'a') as f:
-                    f.write(f"\n{id_revision.strip()}")
-        except FileNotFoundError:
-            return ("❌ El archivo no existe")
-        except PermissionError:
-            return ("❌ No tienes permisos para leer el archivo")
-        except UnicodeDecodeError:
-            return ("❌ Problema de codificación del archivo")
-        except Exception as e:
-            return (f"❌ Error inesperado: {e}")
-        else:
-            return f"✅ Aprobada"
-
-    # Revertir check de aprobacion
-    def revertir_desicion(id_revision):
-        try:
-            revisiones = obtener_revisiones()
-            if id_revision in revisiones:
-                revisiones.remove(id_revision)
-                DATA_FILE_REVISIONES.write_text(data="\n".join(revisiones).strip())
-                return "✅ Revertiste la aprobacion"
-            else:
-                return "✅ Revertiste la aprobacion"
-
-        except FileNotFoundError:
-            return "❌ El archivo no existe"
-        except PermissionError:
-            return "❌ No tienes permisos para leer el archivo"
-        except UnicodeDecodeError:
-            return "❌ Problema de codificación del archivo"
-        except Exception as e:
-            return f"❌ Error inesperado: {e}"
-
-    def create_checkboxes(id_generated,checkboxes):
-        # Metodo al cambiar estado del checkbox
-        revisiones = obtener_revisiones()
-        def callback_chk_box(chk_key):
-            if st.session_state.get(chk_key, False) and chk_key not in revisiones:
-                st.session_state["revision"] = aprobar_revision(chk_key)
-
-            elif not st.session_state.get(chk_key, False) and chk_key in revisiones:
-                st.session_state["revision"] = revertir_desicion(chk_key)
-
-        for index,chk_text in enumerate(checkboxes):
-            chk_key = f"{id_generated}_chk_{index}"
-            st.checkbox(chk_text if chk_key not in revisiones else f"~~{chk_text.strip()}~~",key=chk_key,on_change=callback_chk_box,args=(chk_key,),value=True if chk_key in revisiones else False)
-
 
     id_generated = Path(abs_path).name
 
@@ -4344,12 +4272,8 @@ def render_pantalla_9_ia():
         chat_ia = st.session_state[cache_key]
 
     # Mostrar el resumen
-    clean_resume = API_IA_INSTANCIA.clean_checkboxes(chat_ia)
-    st.markdown(clean_resume)
-    
-    # Generamos los checkboxes interactivos
-    checkboxes = API_IA_INSTANCIA.generate_checkboxes(chat_ia)
-    create_checkboxes(id_generated, checkboxes)
+    st.markdown(chat_ia)
+
 
     # --- 3. CHAT INTERACTIVO SOBRE EL DOCUMENTO ---
     st.markdown("---")
@@ -4396,59 +4320,38 @@ if st.session_state.get("APP_PAGE") == "EETT_P7":
 
 if st.session_state.get("APP_PAGE") == "EXCEL_P8":
     # ===================  PANTALLA 8 – BIBLIOTECA EXCEL  ===================
-    st.caption("Formatos de Protocolo · Subida + Descarga Plantillas Excel")
+    st.caption("Formatos de Protocolo · Descarga Plantillas Excel")
     st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
     def render_pantalla_8_excel():
         st.subheader("📁 Formatos de Protocolo")
         st.caption("Descarga las plantillas en Excel")
-        # Usar un key dinámico para forzar el reinicio del uploader tras subir
-        excel_key = f"EXCEL_UPLOADER_P8_{st.session_state.get('excel_upload_count', 0)}"
-        excel_up = st.file_uploader("FALTA SUBIR LOS FORMATOS DE PROTOCOLO", type=["xlsx", "xls", "csv"], key=excel_key)
-        if excel_up is not None:
-            Path(EXCEL_DIR).mkdir(parents=True, exist_ok=True)
-            excel_path = Path(EXCEL_DIR) / excel_up.name
-            with open(excel_path, "wb") as f:
-                f.write(excel_up.getvalue())
-            st.success(f"Archivo '{excel_up.name}' subido correctamente.")
-            st.session_state['excel_upload_count'] = st.session_state.get('excel_upload_count', 0) + 1
-            st.rerun()
 
         st.markdown("#### Plantillas disponibles:")
         try:
-            files = list(Path(EXCEL_DIR).glob("*"))
+            files = sorted(Path(EXCEL_DIR).glob("*"))
             if not files:
-                st.info("No hay archivos Excel subidos.")
+                st.info("No hay archivos Excel disponibles.")
             else:
                 cols = st.columns(2)
                 for idx, file in enumerate(files):
                     stat = file.stat()
                     size_mb = stat.st_size / 1024 / 1024
-                    fecha = datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M')
                     with cols[idx % 2]:
                         st.markdown(f"""
-                        <div style='border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; background:#fafbfc; min-height: 140px;'>
+                        <div style='border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; background:#fafbfc; min-height: 80px;'>
                             <b>📄 {file.name}</b><br>
-                            <span style='color:#64748b;font-size:0.95em;'>Tamaño: {size_mb:.2f} MB<br>Fecha de subida: {fecha}</span>
+                            <span style='color:#64748b;font-size:0.95em;'>Tamaño: {size_mb:.2f} MB</span>
                         </div>
                         """, unsafe_allow_html=True)
-                        btn_col1, _, btn_col2 = st.columns([2,4,2])
-                        with btn_col1:
-                            with open(file, "rb") as f:
-                                st.download_button(
-                                    label="⬇️ Descargar",
-                                    data=f.read(),
-                                    file_name=file.name,
-                                    mime="application/octet-stream",
-                                    key=f"dl8_{file.name}"
-                                )
-                        with btn_col2:
-                            if st.button("🗑️ Eliminar", key=f"del8_{file.name}"):
-                                try:
-                                    file.unlink()
-                                    st.success(f"Archivo '{file.name}' eliminado.")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"No se pudo eliminar: {e}")
+                        with open(file, "rb") as f:
+                            st.download_button(
+                                label="⬇️ Descargar",
+                                data=f.read(),
+                                file_name=file.name,
+                                mime="application/octet-stream",
+                                key=f"dl8_{file.name}",
+                                use_container_width=True
+                            )
         except Exception as e:
             st.error(f"Error al listar archivos: {e}")
     render_pantalla_8_excel()
