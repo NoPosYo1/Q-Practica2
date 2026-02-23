@@ -20,13 +20,6 @@ class ApiIa:
     #### 📋 Requisitos / frases detectadas
     [Aqui genera una lista desordenada de los requisitos y frases clave del rubro detectadas en el documento , máximo 10 list elements]
 
-    #### ✅ Checklist QA/QC
-    [Aqui genera un texto simple, con los elementos checklist QA/QC que hayas detectado, usando el siguiente formato:
-     [item del checklist 1 que generes ~~ item2 ~~ item3 ~~ etc], minimo 6 items y máximo 20. Fijate que todos los items que generes 
-     deben ir dentro de corchetes [] y separados por doble virgulilla ~~ . OJO no deben ser por separado, un ejemplo de como 
-     debes entregarlo seria: [tarea1~~tarea2~~tarea3~~etc]
-    ]
-
     Necesito que lo generes tal cual con esa estructura, no mas, no menos. Se breve.
     Además, revisa siempre que todo el texto este en idioma español.
     A continuación te entrego el texto sobre el cual debes generar lo solicitado:
@@ -112,7 +105,8 @@ class ApiIa:
             return ("❌ Problema de codificación del archivo")
         except Exception as e:
             return (f"❌ Error inesperado: {e}")
-
+        
+    """
     def generate_checkboxes(self, ia_resume: str) -> list[str]:
         if not ia_resume:
             return ["No se pudo generar el resumen IA"]
@@ -128,7 +122,7 @@ class ApiIa:
 
         items = [x.strip() for x in raw.split("~~")]
         return [x for x in items if x]  # sin vacíos
-
+    """
     def clean_checkboxes(self, ia_resume: str) -> str:
         if not ia_resume:
             return "No se pudo generar el resumen IA"
@@ -137,8 +131,8 @@ class ApiIa:
         # Elimina el bloque [ ... ] completo (y lo que contenga)
         return re.sub(chk_pattern, "", ia_resume).strip()
     
-    def chat_interactivo(self, mensaje_usuario, historial_mensajes, ia_contenido):
-        
+
+    def chat_interactivo(self, mensaje_usuario, historial_mensajes, ia_contenido):        
         model = "openai/gpt-oss-120b"
         # Limitamos el contexto para no exceder la ventana de tokens (aprox 12k chars de seguridad)
         contexto = str(ia_contenido)

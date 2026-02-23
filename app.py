@@ -4346,11 +4346,11 @@ def render_pantalla_9_ia():
     # Mostrar el resumen
     clean_resume = API_IA_INSTANCIA.clean_checkboxes(chat_ia)
     st.markdown(clean_resume)
-    
+    """
     # Generamos los checkboxes interactivos
     checkboxes = API_IA_INSTANCIA.generate_checkboxes(chat_ia)
     create_checkboxes(id_generated, checkboxes)
-
+    """
     # --- 3. CHAT INTERACTIVO SOBRE EL DOCUMENTO ---
     st.markdown("---")
     st.subheader("💬 Chat Consultor de EETT")
