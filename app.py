@@ -29,12 +29,13 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import numpy as np
 import pandas as pd
-import aspose.cells as cells
+
 import streamlit as st
 import fitz  # PyMuPDF
 import cv2
 from sqlalchemy import text
 from rapidocr_onnxruntime import RapidOCR
+import aspose.cells as cells
 
 st.set_page_config(page_title="Q-INTEGRITY", layout="wide")
 
