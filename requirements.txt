@@ -12,3 +12,4 @@ rapidocr-onnxruntime
 opencv-python-headless
 sqlalchemy
 psycopg2-binary
+xlrd
