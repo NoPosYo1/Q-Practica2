@@ -4151,7 +4151,7 @@ def render_pantalla_9_ia():
     #verificar_groq() #se uso para verificar si funciona el groq y mostrar el problema
     st.subheader("🤖 IA sobre EETT (modo auditor)")
     # --- MODIFICADO: caption ampliado para mencionar PDF/OCR ---
-    st.caption("Selecciona EETT de Biblioteca · Lee WORD (.docx), PDF (.pdf), EXCEL(.xls/xlsx) y genera resumen + checklist.")
+    st.caption("Selecciona EETT de Biblioteca · Lee WORD (.docx) o PDF (.pdf) y genera resumen + checklist.")
     # --- FIN MODIFICACIÓN: caption ---
 
     #REVISAR MENSAJES DE LISTA DE PENDIENTES EN COLA
@@ -4286,7 +4286,7 @@ def render_pantalla_9_ia():
             return "❌ Problema de codificación del archivo"
         except Exception as e:
             return f"❌ Error inesperado: {e}"
-    """
+
     def create_checkboxes(id_generated,checkboxes):
         # Metodo al cambiar estado del checkbox
         revisiones = obtener_revisiones()
@@ -4300,7 +4300,7 @@ def render_pantalla_9_ia():
         for index,chk_text in enumerate(checkboxes):
             chk_key = f"{id_generated}_chk_{index}"
             st.checkbox(chk_text if chk_key not in revisiones else f"~~{chk_text.strip()}~~",key=chk_key,on_change=callback_chk_box,args=(chk_key,),value=True if chk_key in revisiones else False)
-    """
+
 
     id_generated = Path(abs_path).name
 
@@ -4346,11 +4346,11 @@ def render_pantalla_9_ia():
     # Mostrar el resumen
     clean_resume = API_IA_INSTANCIA.clean_checkboxes(chat_ia)
     st.markdown(clean_resume)
-    """
+    
     # Generamos los checkboxes interactivos
     checkboxes = API_IA_INSTANCIA.generate_checkboxes(chat_ia)
     create_checkboxes(id_generated, checkboxes)
-    """
+
     # --- 3. CHAT INTERACTIVO SOBRE EL DOCUMENTO ---
     st.markdown("---")
     st.subheader("💬 Chat Consultor de EETT")
