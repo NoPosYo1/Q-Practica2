@@ -29,13 +29,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import numpy as np
 import pandas as pd
-
 import streamlit as st
 import fitz  # PyMuPDF
 import cv2
 from sqlalchemy import text
 from rapidocr_onnxruntime import RapidOCR
-import aspose.cells as cells
 
 st.set_page_config(page_title="Q-INTEGRITY", layout="wide")
 
@@ -4251,13 +4249,7 @@ def render_pantalla_9_ia():
         if not text.strip():
             st.error(diag)
             return
-    elif ext in ["xls", "xlsx"]:
-        # Intento visual con conversión a PDF + OCR para captar gráficos/tablas
-        text = _read_excel_visual_robust(abs_path)
-        if not text.strip():
-            st.error("No pude extraer texto desde el Excel (ni visual ni tabular).")
-            return
-        """
+            
     elif ext == "xlsx":
         text = _read_excel_xlsx_text_robust(abs_path)
         if not text.strip():
@@ -4268,7 +4260,6 @@ def render_pantalla_9_ia():
         if not text.strip():
             st.error("No pude extraer texto desde el Excel.")
             return
-        """
     else:
         st.warning("Tipo de archivo no soportado. Esta demo analiza DOCX y PDF (con OCR).")
         return
