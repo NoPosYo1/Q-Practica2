@@ -3482,7 +3482,7 @@ if st.sidebar.button("📁 8) Formatos de Protocolo", width='stretch'):
     st.session_state["APP_PAGE"] = "EXCEL_P8"
     st.rerun()
 if st.sidebar.button("🤖 9) IA sobre EETT", width='stretch'):
-    st.session_state["APP_PAGE"] = "IA_P8"
+    st.session_state["APP_PAGE"] = "IA_P9"
     st.rerun()
 
 # =========================================================
@@ -3812,7 +3812,7 @@ def render_pantalla_7_eett():
 # =========================================================
 # ================  PANTALLA 9 – IA EETT  =================
 # =========================================================
-
+# Borrar las que no se usan(_pdf_extract_text,_ia_rule_based_summary,_detect_language, _find_poppler_path,_simple_audit_sumarize)
 def _pdf_extract_text(path_pdf: str, max_pages: int = 25) -> Tuple[bool, str]:
     """
     Extrae texto. Si no puede (PDF escaneado/imagen), devuelve (False, motivo).
@@ -3929,6 +3929,40 @@ def _read_docx_text_robust(abs_path: str) -> str:
         return "\n".join(texts).strip()
     except Exception:
         return ""
+
+def _read_excel_text_robust(abs_path: str) -> str:
+    """
+    Lee todas las pestañas de un Excel (.xlsx, .xls) de forma robusta.
+    """
+    try:
+
+        try:
+            dict_hojas = pd.read_excel(abs_path, sheet_name=None, engine='openpyxl')
+        except Exception:
+            dict_hojas = pd.read_excel(abs_path, sheet_name=None)
+        
+        if not dict_hojas:
+            return ""
+            
+        lineas_texto = []
+        
+        for nombre_hoja, df in dict_hojas.items():
+            # eliminamos filas y columnas vacias
+            df = df.dropna(how='all').dropna(axis=1, how='all')
+            
+            if not df.empty:
+                lineas_texto.append(f"--- HOJA: {nombre_hoja} ---")
+
+                texto_tabla = df.to_string(index=False, header=True, justify='left')
+                lineas_texto.append(texto_tabla)
+                lineas_texto.append("\n" + "="*30 + "\n") 
+        
+        return "\n".join(lineas_texto).strip()
+        
+    except Exception as e:
+        print(f"Error crítico en la extracción de Excel: {e}")
+        return ""
+#aa
 
 # --- OCR Y DETECCIÓN DE IDIOMA  ---
 def _detect_language(text: str) -> str:
@@ -4098,7 +4132,7 @@ def render_pantalla_9_ia():
     #verificar_groq() #se uso para verificar si funciona el groq y mostrar el problema
     st.subheader("🤖 IA sobre EETT (modo auditor)")
     # --- MODIFICADO: caption ampliado para mencionar PDF/OCR ---
-    st.caption("Selecciona EETT de Biblioteca · Lee WORD (.docx) o PDF (.pdf) y genera resumen + checklist QA/QC (sin inventar).")
+    st.caption("Selecciona EETT de Biblioteca · Lee WORD (.docx) o PDF (.pdf) y genera resumen + checklist.")
     # --- FIN MODIFICACIÓN: caption ---
 
     #REVISAR MENSAJES DE LISTA DE PENDIENTES EN COLA
@@ -4146,7 +4180,7 @@ def render_pantalla_9_ia():
     if not os.path.exists(abs_path):
         st.error("Archivo físico no encontrado en biblioteca_eett/.")
         return
-
+#aa
     # --- MODIFICADO: Extracción y OCR ---
     text = ""
     if ext == "docx":
@@ -4161,6 +4195,11 @@ def render_pantalla_9_ia():
             text, diag = _read_pdf_text_robust(abs_path, force_ocr=True)
         if not text.strip():
             st.error(diag)
+            return
+    elif ext in ["xls", "xlsx"]:
+        text = _read_excel_text_robust(abs_path)
+        if not text.strip():
+            st.error("No pude extraer texto desde el Excel. (El archivo en disco no parece ser un XLSX válido o está vacío).")
             return
     else:
         st.warning("Tipo de archivo no soportado. Esta demo analiza DOCX y PDF (con OCR).")
@@ -4324,7 +4363,7 @@ def render_pantalla_9_ia():
         st.rerun()
 
 # =========================================================
-# ==============  ROUTER NUEVAS PANTALLAS 7/8 =============
+# ==============  ROUTER NUEVAS PANTALLAS 7/8/9 =============
 # =========================================================
 if st.session_state.get("APP_PAGE") == "EETT_P7":
     st.caption("Biblioteca EETT · Carga + Catálogo + Acciones")
@@ -4390,7 +4429,7 @@ if st.session_state.get("APP_PAGE") == "EXCEL_P8":
             st.error(f"Error al listar archivos: {e}")
     render_pantalla_8_excel()
 
-if st.session_state.get("APP_PAGE") == "IA_P8":
+if st.session_state.get("APP_PAGE") == "IA_P9":
     st.caption("IA sobre EETT · Resumen + Checklist QA/QC")
     st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
     render_pantalla_9_ia()
