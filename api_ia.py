@@ -16,7 +16,7 @@ class ApiIa:
 
     #### Resultado
     #### 🧾 Resumen
-    [Aqui genera un resumen de que trata el documento]
+    [Aqui genera un resumen de que trata el documento,si es un excel, haz un resumen de cada pestaña, si es un documento de texto o pdf, haz un resumen general del documento]
 
     #### 📋 Requisitos / frases detectadas
     [Aqui genera una lista desordenada de los requisitos y frases clave del rubro detectadas en el documento , máximo 10 list elements]
