@@ -10,7 +10,8 @@ except ImportError:
 class ApiIa:
     # Generar funcion para preguntar al modelo de IA sobre el contenido de un texto
     PROMPT_IA_RESUMEN = '''
-    Te entregaré un texto extraido de un documento en base al rubro de la construccion
+    Te entregaré un texto extraido de un documento en base al rubro de la construccion, si se trata de un excel hace un resumen de cada pestaña, 
+    si es un documento de texto o pdf, haz un resumen general del documento. El resumen debe ser breve, no mas de 7 lineas, y debe contener los siguientes puntos:
     En base a este documento necesito que me generes lo siguiente, con estructura en markdown:
 
     #### Resultado
