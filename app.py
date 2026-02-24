@@ -4148,7 +4148,7 @@ def render_pantalla_9_ia():
     #verificar_groq() #se uso para verificar si funciona el groq y mostrar el problema
     st.subheader("🤖 IA sobre EETT (modo auditor)")
     # --- MODIFICADO: caption ampliado para mencionar PDF/OCR ---
-    st.caption("Selecciona EETT de Biblioteca · Lee WORD (.docx) o PDF (.pdf) y genera resumen + checklist.")
+    st.caption("Selecciona EETT de Biblioteca · Lee WORD (.docx) o PDF (.pdf) y genera resumen.")
     # --- FIN MODIFICACIÓN: caption ---
 
     #REVISAR MENSAJES DE LISTA DE PENDIENTES EN COLA
@@ -4196,7 +4196,7 @@ def render_pantalla_9_ia():
     if not os.path.exists(abs_path):
         st.error("Archivo físico no encontrado en biblioteca_eett/.")
         return
-#aa
+
     # --- MODIFICADO: Extracción y OCR ---
     text = ""
     if ext == "docx":
