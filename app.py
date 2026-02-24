@@ -4310,19 +4310,7 @@ def render_pantalla_9_ia():
         st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
         st.rerun()
 
-# =========================================================
-# ==============  ROUTER NUEVAS PANTALLAS 7/8/9 =============
-# =========================================================
-if st.session_state.get("APP_PAGE") == "EETT_P7":
-    st.caption("Biblioteca EETT · Carga + Catálogo + Acciones")
-    st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
-    render_pantalla_7_eett()
-
-if st.session_state.get("APP_PAGE") == "EXCEL_P8":
-    # ===================  PANTALLA 8 – BIBLIOTECA EXCEL  ===================
-    st.caption("Formatos de Protocolo · Descarga Plantillas Excel")
-    st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
-    def render_pantalla_8_excel():
+def render_pantalla_8_excel():
         st.subheader("📁 Formatos de Protocolo")
         st.caption("Descarga las plantillas en Excel")
 
@@ -4354,10 +4342,23 @@ if st.session_state.get("APP_PAGE") == "EXCEL_P8":
                             )
         except Exception as e:
             st.error(f"Error al listar archivos: {e}")
+    
+# =========================================================
+# ==============  ROUTER NUEVAS PANTALLAS 7/8/9 =============
+# =========================================================
+if st.session_state.get("APP_PAGE") == "EETT_P7":
+    st.caption("Biblioteca EETT · Carga + Catálogo + Acciones")
+    st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
+    render_pantalla_7_eett()
+
+if st.session_state.get("APP_PAGE") == "EXCEL_P8":
+    # ===================  PANTALLA 8 – BIBLIOTECA EXCEL  ===================
+    st.caption("Formatos de Protocolo · Descarga Plantillas Excel")
+    st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
     render_pantalla_8_excel()
 
 if st.session_state.get("APP_PAGE") == "IA_P9":
-    st.caption("IA sobre EETT · Resumen + Checklist QA/QC")
+    st.caption("IA sobre EETT · Resumen + Chat interactivo")
     st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
     render_pantalla_9_ia()
 # =========================================================
